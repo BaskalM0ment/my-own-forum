@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Moderated Forum</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  background:#0f0f0f;
+  color:#eaeaea;
+  font-family: Arial, Helvetica, sans-serif;
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
+}
+h1 { color:#7cf }
+input, textarea {
+  width:100%;
+  padding:10px;
+  margin:6px 0;
+  background:#1b1b1b;
+  color:#fff;
+  border:1px solid #333;
+}
+button {
+  padding:8px 14px;
+  background:#333;
+  color:#fff;
+  border:none;
+  cursor:pointer;
+}
+button:hover { background:#444 }
+.post {
+  border-bottom:1px solid #333;
+  padding:12px 0;
+}
+.comment {
+  margin-left:15px;
+  font-size:14px;
+  color:#ccc;
+}
+.user {
+  color:#7cf;
+  font-weight:bold;
+}
+.small {
+  font-size:12px;
+  color:#888;
+}
+.hidden {
+  display:none;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Forum</h1>
+<p>
+Free discussion. No ads.  
+Illegal or criminal activity is automatically removed by AI moderation.
+</p>
+
+<hr>
+
+<div id="auth"></div>
+
+<div id="postBox" class="hidden">
+  <textarea id="postContent" placeholder="Write something..."></textarea>
+  <label>
+    <input type="checkbox" id="anon"> Post anonymously
+  </label><br><br>
+  <button onclick="createPost()">Post</button>
+</div>
+
+<hr>
+
+<div id="posts">
+  <p class="small">Loading posts…</p>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
