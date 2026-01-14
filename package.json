@@ -9,7 +9,5 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
     "busboy": "^1.6.0"
-  },
-  "author": "Your Name",
-  "license": "MIT"
+  }
 }
