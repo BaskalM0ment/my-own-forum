@@ -8,49 +8,72 @@
 <style>
 body{
   background:#0e0e0e;color:#eaeaea;font-family:Arial,sans-serif;
-  max-width:1100px;margin:auto;padding:20px
+  margin:0;padding:0
 }
-h1{color:#7cf}
-nav a{margin-right:14px;color:#7cf;cursor:pointer;text-decoration:none}
+header{
+  padding:15px 20px;
+  border-bottom:1px solid #333;
+}
+nav a{
+  margin-right:14px;
+  color:#7cf;
+  cursor:pointer;
+  text-decoration:none;
+}
 nav a:hover{text-decoration:underline}
-input,textarea,select{
-  width:100%;padding:10px;margin:6px 0;
-  background:#1a1a1a;color:#fff;border:1px solid #333
+main{
+  max-width:1100px;
+  margin:auto;
+  padding:20px;
+}
+input,textarea{
+  width:100%;
+  padding:10px;
+  margin:6px 0;
+  background:#1a1a1a;
+  color:#fff;
+  border:1px solid #333
 }
 button{
-  padding:8px 14px;background:#333;color:#fff;
-  border:none;cursor:pointer
+  padding:8px 14px;
+  background:#333;
+  color:#fff;
+  border:none;
+  cursor:pointer
 }
 button:hover{background:#444}
 .page{display:none}
-.post,.comment,.panel{
-  border-bottom:1px solid #333;padding:10px 0
+.post{
+  border-bottom:1px solid #333;
+  padding:12px 0
 }
 .user{color:#7cf;font-weight:bold}
 .small{font-size:12px;color:#888}
-.warn{color:#ffb347}
-.danger{color:#ff5c5c}
+.preview img, .preview audio{
+  max-width:300px;
+  display:block;
+  margin-top:8px
+}
 .hidden{display:none}
 </style>
 </head>
 
 <body>
 
-<h1>Forum</h1>
+<header>
+  <nav>
+    <a onclick="show('forum')">Forum</a>
+    <a onclick="show('guidelines')">Guidelines</a>
+    <a onclick="show('profile')">Profile</a>
+    <a onclick="show('appeals')">Appeals</a>
+    <a onclick="show('login')" id="loginLink">Login</a>
+    <a onclick="logout()" id="logoutLink" class="hidden">Logout</a>
+  </nav>
+</header>
 
-<nav>
-  <a onclick="show('forum')">Forum</a>
-  <a onclick="show('guidelines')">Guidelines</a>
-  <a onclick="show('profile')">Profile</a>
-  <a onclick="show('appeals')">Appeals</a>
-  <a onclick="show('moderation')" id="modLink" class="hidden">Moderation</a>
-  <a onclick="show('login')" id="loginLink">Login</a>
-  <a onclick="logout()" id="logoutLink" class="hidden">Logout</a>
-</nav>
+<main>
 
-<hr>
-
-<!-- LOGIN / SIGNUP -->
+<!-- LOGIN -->
 <div id="login" class="page">
   <h2>Login</h2>
   <input id="lu" placeholder="Username">
@@ -61,17 +84,24 @@ button:hover{background:#444}
   <input id="su" placeholder="Username">
   <input id="sp" type="password" placeholder="Password">
   <button onclick="signup()">Create account</button>
+
+  <p id="authMsg" class="small"></p>
 </div>
 
 <!-- FORUM -->
 <div id="forum" class="page">
   <h2>Forum</h2>
 
-  <div id="postBox">
-    <textarea id="postContent" placeholder="Write something..."></textarea>
-    <label><input type="checkbox" id="anon"> Post anonymously</label><br><br>
-    <button onclick="createPost()">Post</button>
-  </div>
+  <textarea id="postContent" placeholder="Write something..."></textarea>
+
+  <input type="file" id="fileInput" accept="image/*,audio/*">
+  <div class="preview" id="preview"></div>
+
+  <label>
+    <input type="checkbox" id="anon"> Post anonymously
+  </label><br><br>
+
+  <button onclick="createPost()">Post</button>
 
   <hr>
   <div id="posts"><p class="small">Loading posts…</p></div>
@@ -79,44 +109,30 @@ button:hover{background:#444}
 
 <!-- PROFILE -->
 <div id="profile" class="page">
-  <h2>User Profile</h2>
+  <h2>Profile</h2>
   <p><b>Username:</b> <span id="pName"></span></p>
-  <p><b>Role:</b> <span id="pRole"></span></p>
-  <p><b>Status:</b> <span id="pStatus"></span></p>
-  <p class="small">
-    This forum is primarily moderated by AI.  
-    Human moderators can override decisions.
-  </p>
+  <p><b>Status:</b> Active</p>
 </div>
 
 <!-- GUIDELINES -->
 <div id="guidelines" class="page">
-  <h2>Guidelines</h2>
+  <h2>Forum Guidelines</h2>
   <ul>
-    <li>Free discussion is allowed.</li>
-    <li>No ads or spam.</li>
-    <li><b>No crime or illegal activity.</b></li>
-    <li>AI moderation runs 24/7.</li>
-    <li>Human moderators review appeals.</li>
+    <li>Free discussion allowed</li>
+    <li>No ads or spam</li>
+    <li><b>No crime or illegal activity</b></li>
+    <li>AI moderation runs 24/7</li>
   </ul>
 </div>
 
 <!-- APPEALS -->
 <div id="appeals" class="page">
   <h2>Appeals</h2>
-  <p class="small">If the AI removed your content or banned you, you may appeal.</p>
-  <textarea id="appealText" placeholder="Explain why this should be reviewed"></textarea>
+  <textarea id="appealText" placeholder="Explain your appeal"></textarea>
   <button onclick="submitAppeal()">Submit appeal</button>
-  <div id="appealStatus" class="small"></div>
 </div>
 
-<!-- HUMAN MODERATION -->
-<div id="moderation" class="page">
-  <h2>Human Moderation Panel</h2>
-  <p class="small">Admins and moderators only. AI handles first decisions.</p>
-
-  <div id="reports"><p class="small">Loading reports…</p></div>
-</div>
+</main>
 
 <script>
 let user = JSON.parse(localStorage.getItem("user"));
@@ -130,40 +146,41 @@ function updateUI(){
   if(user){
     loginLink.classList.add("hidden");
     logoutLink.classList.remove("hidden");
-    pName.textContent=user.username;
-    pRole.textContent=user.is_admin?"Admin / Moderator":"User";
-    pStatus.textContent=user.banned?"Banned":"Active";
-    if(user.is_admin) modLink.classList.remove("hidden");
+    pName.textContent = user.username;
     show("forum");
     loadPosts();
-    if(user.is_admin) loadReports();
   }else{
     loginLink.classList.remove("hidden");
     logoutLink.classList.add("hidden");
-    modLink.classList.add("hidden");
     show("login");
   }
 }
 
 async function signup(){
-  await fetch("/.netlify/functions/api",{
+  authMsg.textContent="Creating account...";
+  const res = await fetch("/.netlify/functions/api",{
     method:"POST",
+    headers:{ "Content-Type":"application/json" },
     body:JSON.stringify({action:"signup",u:su.value,p:sp.value})
   });
-  alert("Account created");
+  authMsg.textContent = res.ok ? "Account created. You can log in." : "Signup failed.";
 }
 
 async function login(){
-  const r=await fetch("/.netlify/functions/api",{
+  authMsg.textContent="Logging in...";
+  const res = await fetch("/.netlify/functions/api",{
     method:"POST",
+    headers:{ "Content-Type":"application/json" },
     body:JSON.stringify({action:"login",u:lu.value,p:lp.value})
   });
-  const d=await r.json();
-  if(d.ok){
-    user=d.user;
+  const data = await res.json();
+  if(data.ok){
+    user=data.user;
     localStorage.setItem("user",JSON.stringify(user));
     updateUI();
-  }else alert("Login failed");
+  }else{
+    authMsg.textContent="Invalid login.";
+  }
 }
 
 function logout(){
@@ -172,71 +189,64 @@ function logout(){
   updateUI();
 }
 
+fileInput.onchange = () => {
+  preview.innerHTML="";
+  const f = fileInput.files[0];
+  if(!f) return;
+  if(f.type.startsWith("image")){
+    const img=document.createElement("img");
+    img.src=URL.createObjectURL(f);
+    preview.appendChild(img);
+  }
+  if(f.type.startsWith("audio")){
+    const a=document.createElement("audio");
+    a.controls=true;
+    a.src=URL.createObjectURL(f);
+    preview.appendChild(a);
+  }
+};
+
 async function createPost(){
-  await fetch("/.netlify/functions/api",{
-    method:"POST",
-    body:JSON.stringify({
-      action:"post",
-      user:anon.checked?"Anonymous":user.username,
-      content:postContent.value
-    })
-  });
+  if(!user) return alert("Login required");
+
+  const fd = new FormData();
+  fd.append("action","post");
+  fd.append("user",anon.checked?"Anonymous":user.username);
+  fd.append("content",postContent.value);
+  if(fileInput.files[0]) fd.append("file",fileInput.files[0]);
+
+  await fetch("/.netlify/functions/api",{ method:"POST", body:fd });
+
   postContent.value="";
+  fileInput.value="";
+  preview.innerHTML="";
   loadPosts();
 }
 
 async function loadPosts(){
-  const r=await fetch("/.netlify/functions/api");
-  const posts=await r.json();
-  posts.innerHTML=posts.map(p=>`
+  const r = await fetch("/.netlify/functions/api");
+  const posts = await r.json();
+  document.getElementById("posts").innerHTML = posts.map(p=>`
     <div class="post">
       <span class="user">${p.user}</span>
-      <span class="small">${p.created_at||""}</span>
       <p>${p.content}</p>
-      ${user?`<button onclick="report('post:${p.id}')">Report</button>`:""}
+      ${p.file_url ? (
+        p.file_type.startsWith("image")
+        ? `<img src="${p.file_url}" style="max-width:300px">`
+        : `<audio controls src="${p.file_url}"></audio>`
+      ) : ""}
     </div>
   `).join("");
-}
-
-async function report(target){
-  const reason=prompt("Reason for report?");
-  if(!reason) return;
-  await fetch("/.netlify/functions/api",{
-    method:"POST",
-    body:JSON.stringify({action:"report",target,reason})
-  });
-  alert("Reported");
 }
 
 async function submitAppeal(){
   await fetch("/.netlify/functions/api",{
     method:"POST",
-    body:JSON.stringify({action:"appeal",user:user.username,text:appealText.value})
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({action:"appeal",text:appealText.value})
   });
-  appealStatus.textContent="Appeal submitted for human review.";
   appealText.value="";
-}
-
-async function loadReports(){
-  const r=await fetch("/.netlify/functions/api?admin=reports");
-  const data=await r.json();
-  reports.innerHTML=data.map(x=>`
-    <div class="panel">
-      <b>${x.target}</b>
-      <p>${x.reason}</p>
-      <button onclick="modAction('remove','${x.target}')">Remove</button>
-      <button onclick="modAction('ban','${x.user}')">Ban</button>
-      <button onclick="modAction('unban','${x.user}')">Unban</button>
-    </div>
-  `).join("");
-}
-
-async function modAction(type,target){
-  await fetch("/.netlify/functions/api",{
-    method:"POST",
-    body:JSON.stringify({action:type,target})
-  });
-  loadReports();
+  alert("Appeal submitted");
 }
 
 updateUI();
