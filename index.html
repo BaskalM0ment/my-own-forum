@@ -3,84 +3,244 @@
 <head>
 <meta charset="UTF-8">
 <title>AI Moderated Forum</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body {
-  background:#0f0f0f;
-  color:#eaeaea;
-  font-family: Arial, Helvetica, sans-serif;
-  max-width: 900px;
-  margin: auto;
-  padding: 20px;
+body{
+  background:#0e0e0e;color:#eaeaea;font-family:Arial,sans-serif;
+  max-width:1100px;margin:auto;padding:20px
 }
-h1 { color:#7cf }
-input, textarea {
-  width:100%;
-  padding:10px;
-  margin:6px 0;
-  background:#1b1b1b;
-  color:#fff;
-  border:1px solid #333;
+h1{color:#7cf}
+nav a{margin-right:14px;color:#7cf;cursor:pointer;text-decoration:none}
+nav a:hover{text-decoration:underline}
+input,textarea,select{
+  width:100%;padding:10px;margin:6px 0;
+  background:#1a1a1a;color:#fff;border:1px solid #333
 }
-button {
-  padding:8px 14px;
-  background:#333;
-  color:#fff;
-  border:none;
-  cursor:pointer;
+button{
+  padding:8px 14px;background:#333;color:#fff;
+  border:none;cursor:pointer
 }
-button:hover { background:#444 }
-.post {
-  border-bottom:1px solid #333;
-  padding:12px 0;
+button:hover{background:#444}
+.page{display:none}
+.post,.comment,.panel{
+  border-bottom:1px solid #333;padding:10px 0
 }
-.comment {
-  margin-left:15px;
-  font-size:14px;
-  color:#ccc;
-}
-.user {
-  color:#7cf;
-  font-weight:bold;
-}
-.small {
-  font-size:12px;
-  color:#888;
-}
-.hidden {
-  display:none;
-}
+.user{color:#7cf;font-weight:bold}
+.small{font-size:12px;color:#888}
+.warn{color:#ffb347}
+.danger{color:#ff5c5c}
+.hidden{display:none}
 </style>
 </head>
 
 <body>
 
 <h1>Forum</h1>
-<p>
-Free discussion. No ads.  
-Illegal or criminal activity is automatically removed by AI moderation.
-</p>
+
+<nav>
+  <a onclick="show('forum')">Forum</a>
+  <a onclick="show('guidelines')">Guidelines</a>
+  <a onclick="show('profile')">Profile</a>
+  <a onclick="show('appeals')">Appeals</a>
+  <a onclick="show('moderation')" id="modLink" class="hidden">Moderation</a>
+  <a onclick="show('login')" id="loginLink">Login</a>
+  <a onclick="logout()" id="logoutLink" class="hidden">Logout</a>
+</nav>
 
 <hr>
 
-<div id="auth"></div>
+<!-- LOGIN / SIGNUP -->
+<div id="login" class="page">
+  <h2>Login</h2>
+  <input id="lu" placeholder="Username">
+  <input id="lp" type="password" placeholder="Password">
+  <button onclick="login()">Login</button>
 
-<div id="postBox" class="hidden">
-  <textarea id="postContent" placeholder="Write something..."></textarea>
-  <label>
-    <input type="checkbox" id="anon"> Post anonymously
-  </label><br><br>
-  <button onclick="createPost()">Post</button>
+  <h3>Sign up</h3>
+  <input id="su" placeholder="Username">
+  <input id="sp" type="password" placeholder="Password">
+  <button onclick="signup()">Create account</button>
 </div>
 
-<hr>
+<!-- FORUM -->
+<div id="forum" class="page">
+  <h2>Forum</h2>
 
-<div id="posts">
-  <p class="small">Loading posts…</p>
+  <div id="postBox">
+    <textarea id="postContent" placeholder="Write something..."></textarea>
+    <label><input type="checkbox" id="anon"> Post anonymously</label><br><br>
+    <button onclick="createPost()">Post</button>
+  </div>
+
+  <hr>
+  <div id="posts"><p class="small">Loading posts…</p></div>
 </div>
 
-<script src="script.js"></script>
+<!-- PROFILE -->
+<div id="profile" class="page">
+  <h2>User Profile</h2>
+  <p><b>Username:</b> <span id="pName"></span></p>
+  <p><b>Role:</b> <span id="pRole"></span></p>
+  <p><b>Status:</b> <span id="pStatus"></span></p>
+  <p class="small">
+    This forum is primarily moderated by AI.  
+    Human moderators can override decisions.
+  </p>
+</div>
+
+<!-- GUIDELINES -->
+<div id="guidelines" class="page">
+  <h2>Guidelines</h2>
+  <ul>
+    <li>Free discussion is allowed.</li>
+    <li>No ads or spam.</li>
+    <li><b>No crime or illegal activity.</b></li>
+    <li>AI moderation runs 24/7.</li>
+    <li>Human moderators review appeals.</li>
+  </ul>
+</div>
+
+<!-- APPEALS -->
+<div id="appeals" class="page">
+  <h2>Appeals</h2>
+  <p class="small">If the AI removed your content or banned you, you may appeal.</p>
+  <textarea id="appealText" placeholder="Explain why this should be reviewed"></textarea>
+  <button onclick="submitAppeal()">Submit appeal</button>
+  <div id="appealStatus" class="small"></div>
+</div>
+
+<!-- HUMAN MODERATION -->
+<div id="moderation" class="page">
+  <h2>Human Moderation Panel</h2>
+  <p class="small">Admins and moderators only. AI handles first decisions.</p>
+
+  <div id="reports"><p class="small">Loading reports…</p></div>
+</div>
+
+<script>
+let user = JSON.parse(localStorage.getItem("user"));
+
+function show(id){
+  document.querySelectorAll(".page").forEach(p=>p.style.display="none");
+  document.getElementById(id).style.display="block";
+}
+
+function updateUI(){
+  if(user){
+    loginLink.classList.add("hidden");
+    logoutLink.classList.remove("hidden");
+    pName.textContent=user.username;
+    pRole.textContent=user.is_admin?"Admin / Moderator":"User";
+    pStatus.textContent=user.banned?"Banned":"Active";
+    if(user.is_admin) modLink.classList.remove("hidden");
+    show("forum");
+    loadPosts();
+    if(user.is_admin) loadReports();
+  }else{
+    loginLink.classList.remove("hidden");
+    logoutLink.classList.add("hidden");
+    modLink.classList.add("hidden");
+    show("login");
+  }
+}
+
+async function signup(){
+  await fetch("/.netlify/functions/api",{
+    method:"POST",
+    body:JSON.stringify({action:"signup",u:su.value,p:sp.value})
+  });
+  alert("Account created");
+}
+
+async function login(){
+  const r=await fetch("/.netlify/functions/api",{
+    method:"POST",
+    body:JSON.stringify({action:"login",u:lu.value,p:lp.value})
+  });
+  const d=await r.json();
+  if(d.ok){
+    user=d.user;
+    localStorage.setItem("user",JSON.stringify(user));
+    updateUI();
+  }else alert("Login failed");
+}
+
+function logout(){
+  localStorage.clear();
+  user=null;
+  updateUI();
+}
+
+async function createPost(){
+  await fetch("/.netlify/functions/api",{
+    method:"POST",
+    body:JSON.stringify({
+      action:"post",
+      user:anon.checked?"Anonymous":user.username,
+      content:postContent.value
+    })
+  });
+  postContent.value="";
+  loadPosts();
+}
+
+async function loadPosts(){
+  const r=await fetch("/.netlify/functions/api");
+  const posts=await r.json();
+  posts.innerHTML=posts.map(p=>`
+    <div class="post">
+      <span class="user">${p.user}</span>
+      <span class="small">${p.created_at||""}</span>
+      <p>${p.content}</p>
+      ${user?`<button onclick="report('post:${p.id}')">Report</button>`:""}
+    </div>
+  `).join("");
+}
+
+async function report(target){
+  const reason=prompt("Reason for report?");
+  if(!reason) return;
+  await fetch("/.netlify/functions/api",{
+    method:"POST",
+    body:JSON.stringify({action:"report",target,reason})
+  });
+  alert("Reported");
+}
+
+async function submitAppeal(){
+  await fetch("/.netlify/functions/api",{
+    method:"POST",
+    body:JSON.stringify({action:"appeal",user:user.username,text:appealText.value})
+  });
+  appealStatus.textContent="Appeal submitted for human review.";
+  appealText.value="";
+}
+
+async function loadReports(){
+  const r=await fetch("/.netlify/functions/api?admin=reports");
+  const data=await r.json();
+  reports.innerHTML=data.map(x=>`
+    <div class="panel">
+      <b>${x.target}</b>
+      <p>${x.reason}</p>
+      <button onclick="modAction('remove','${x.target}')">Remove</button>
+      <button onclick="modAction('ban','${x.user}')">Ban</button>
+      <button onclick="modAction('unban','${x.user}')">Unban</button>
+    </div>
+  `).join("");
+}
+
+async function modAction(type,target){
+  await fetch("/.netlify/functions/api",{
+    method:"POST",
+    body:JSON.stringify({action:type,target})
+  });
+  loadReports();
+}
+
+updateUI();
+</script>
 
 </body>
 </html>
