@@ -1,0 +1,6 @@
+[functions]
+directory="netlify/functions"
+
+[[scheduled.functions]]
+name="scan"
+schedule="*/10 * * * *"
